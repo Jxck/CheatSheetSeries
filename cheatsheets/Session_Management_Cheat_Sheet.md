@@ -2,6 +2,8 @@
 
 ## Introduction
 
+> Session の概要
+
 **Web Authentication, Session Management, and Access Control**:
 
 A web session is a sequence of network HTTP request and response transactions associated with the same user. Modern and complex web applications require the retaining of information or status about each user for the duration of multiple requests. Therefore, sessions provide the ability to establish variables - such as access rights and localization settings - which will apply to each and every interaction a user has with the web application for the duration of the session.
@@ -24,7 +26,7 @@ HTTP はステートレスプロトコル([RFC2616](https://www.ietf.org/rfc/rfc
 
 The session ID or token binds the user authentication credentials (in the form of a user session) to the user HTTP traffic and the appropriate access controls enforced by the web application. The complexity of these three components (authentication, session management, and access control) in modern web applications, plus the fact that its implementation and binding resides on the web developer's hands (as web development frameworks do not provide strict relationships between these modules), makes the implementation of a secure session management module very challenging.
 
-Session ID やトークンは、ユーザー認証の資格情報(ユーザー Session の形)を、ユーザーの HTTP トラフィックと、ウェブアプリケーションが実施する適切なアクセス制御と結びつける。最近のウェブアプリケーションでは、これら 3 つのコンポーネント(認証、 Session 管理、アクセス制御)が複雑であり、さらにその実装と結合がウェブ開発者の手中にあるという事実(ウェブ開発フレームワークがこれらのモジュール間の厳格な関係を提供しないため)により、安全な Session 管理モジュールの実装は非常に困難です。
+Session ID やトークンは、ユーザー認証の資格情報(ユーザー Session の形)を、ユーザーの HTTP トラフィックと、ウェブアプリケーションが実施する適切なアクセス制御と結びつける。最近のウェブアプリケーションでは、これら 3 つのコンポーネント(認証、 Session 管理、アクセス制御)が複雑であり、さらにその実装と結合がウェブ開発者の手中にあるという事実(ウェブ開発フレームワークがこれらのモジュール間の Strict (厳格)な関係を提供しないため)により、安全な Session 管理モジュールの実装は非常に困難です。
 
 The disclosure, capture, prediction, brute force, or fixation of the session ID will lead to session hijacking (or sidejacking) attacks, where an attacker is able to fully impersonate a victim user in the web application. Attackers can perform two types of session hijacking attacks, targeted or generic. In a targeted attack, the attacker's goal is to impersonate a specific (or privileged) web application victim user. For generic attacks, the attacker's goal is to impersonate (or get access as) any valid or legitimate user in the web application.
 
@@ -32,6 +34,11 @@ Session ID の disclosure(盗聴)、 capture(奪取)、 prediction(予測)、 br
 
 
 ## Session ID Properties
+
+> フレームワークがバレるから Session ID の名前は id とかに変えた方がいい
+> 最低 128 bit
+> 現在発行してる他のと被ってはいけない
+> 意味のある中身にしない
 
 In order to keep the authenticated state and track the users progress within the web application, applications provide users with a **session identifier** (session ID or token) that is assigned at session creation time, and is shared and exchanged by the user and the web application for the duration of the session (it is sent on every HTTP request). The session ID is a `name=value` pair.
 
@@ -128,6 +135,13 @@ It is recommended to use the session ID created by your language or framework. I
 
 ## Session Management Implementation
 
+> Session ID の交換方法は色々あるが、 Cookie を使え
+> URL, Hidden Form, POST body, 独自ヘッダは使わない
+> 勝手に許可してるフレームワークもあるのでちゃんと塞いでいるかテスト
+> 特にユーザが Cookie を拒否してる場合にフォールバックを勝手にするなど
+> TLS を HSTS で使い、 Secure をつける。リダイレクトしないか、したら降り直す
+> 公開範囲が違ったら
+
 The session management implementation defines the exchange mechanism that will be used between the user and the web application to share and continuously exchange the session ID. There are multiple mechanisms available in HTTP to maintain session state within web applications, such as cookies (standard HTTP header), URL parameters (URL rewriting - [RFC2396](https://www.ietf.org/rfc/rfc2396.txt)), URL arguments on GET requests, body arguments on POST requests, such as hidden form fields (HTML forms), or proprietary HTTP headers.
 
 Session 管理の実装では、ユーザーとウェブアプリケーションの間で Session ID を共有し、継続的に交換するための交換機構を定義します。 Web アプリケーション内で Session 状態を維持するために HTTP で利用できる仕組みは、 Cookie(標準 HTTP ヘッダー)、 URL パラメータ(URL 書き換え - [RFC2396](https://www.ietf.org/rfc/rfc2396.txt) )、 GET リクエストの URL 引数、隠しフォームフィールド(HTML フォーム)などの POST リクエストのボディ引数、または独自の HTTP ヘッダーなど複数存在します。
@@ -193,13 +207,11 @@ The following set of best practices are focused on protecting the session ID (sp
 - Where possible, avoid offering public unencrypted contents and private encrypted contents from the same host. Where insecure content is required, consider hosting this on a separate insecure domain.
 - Implement [HTTP Strict Transport Security (HSTS)](HTTP_Strict_Transport_Security_Cheat_Sheet.md) to enforce HTTPS connections.
 
-- ネットワークを通じて Session ID が明らかになるため、ある Session を HTTP から HTTPS に、またはその逆に切り替えないでくだ さい。
+- ネットワークを通じて Session ID が明らかになるため、ある Session を HTTP から HTTPS に、またはその逆に切り替えないでください。
   - HTTPS にリダイレクトする場合は、リダイレクトが行われた後に Cookie が設定または再生成されるようにする。
 - 暗号化されたコンテンツと暗号化されていないコンテンツ(HTML ページ、画像、 CSS 、 JavaScript ファイルなど)を同じページ、または同じドメインで混在させないこと。
 - 可能な限り、同じホストから、公開されている非暗号化コンテンツと、非公開の暗号化コンテンツを提供することは避けてください。安全でないコンテンツが必要な場合は、安全でない別のドメインでホストすることを検討する。
-- HTTP Strict Transport Security (HSTS)](HTTP_Strict_Transport_Security_Cheat_Sheet.md) を導入して、 HTTPS 接続を強制する。
-
-www.DeepL.com/Translator(無料版)で翻訳しました。
+- [HTTP Strict Transport Security (HSTS)](HTTP_Strict_Transport_Security_Cheat_Sheet.md) を導入して、 HTTPS 接続を強制する。
 
 See the OWASP [Transport Layer Protection Cheat Sheet](Transport_Layer_Protection_Cheat_Sheet.md) for more general guidance on implementing TLS securely.
 
@@ -212,6 +224,14 @@ TLS は Session ID の予測、ブルートフォース、クライアントサ�
 
 ## Cookies
 
+> Secure がついてないと HTTPS のみでも改竄できる
+> HttpOnly で機密性を保護する
+> SameSite で CSRF は *ある程度* ふせげる
+> Domain はつけない
+> Path で分離できそうだが document.cookie や Set-Cookie できるので他のアプリを同一ドメイン上に混ぜない
+> Cookie は DNS Spoofing/hijacking/poisoning に脆弱(漏洩する)
+> Max-Age をつけない非永続 Cookie を使う
+
 The session ID exchange mechanism based on cookies provides multiple security features in the form of cookie attributes that can be used to protect the exchange of the session ID:
 
 Cookie に基づく Session ID の交換機構は、 Cookie の属性という形で複数のセキュリティ機能を提供し、 Session ID の交換を保護するために使用することができます:
@@ -221,11 +241,11 @@ Cookie に基づく Session ID の交換機構は、 Cookie の属性という�
 
 The `Secure` cookie attribute instructs web browsers to only send the cookie through an encrypted HTTPS (SSL/TLS) connection. This session protection mechanism is mandatory to prevent the disclosure of the session ID through MitM (Man-in-the-Middle) attacks. It ensures that an attacker cannot simply capture the session ID from web browser traffic.
 
-Secure」 Cookie 属性は、暗号化された HTTPS(SSL/TLS)接続を通じてのみ Cookie を送信するよう、ウェブブラウザに指示します。この Session 保護メカニズムは、 MitM(Man-in-the-Middle)攻撃による Session ID の漏洩を防ぐために必須です。攻撃者がウェブブラウザのトラフィックから Session ID を単純に取得できないようにするためです。
+`Secure` Cookie 属性は、暗号化された HTTPS(SSL/TLS)接続を通じてのみ Cookie を送信するよう、ウェブブラウザに指示します。この Session 保護メカニズムは、 MitM(Man-in-the-Middle)攻撃による Session ID の漏洩を防ぐために必須です。攻撃者がウェブブラウザのトラフィックから Session ID を単純に取得できないようにするためです。
 
 Forcing the web application to only use HTTPS for its communication (even when port TCP/80, HTTP, is closed in the web application host) does not protect against session ID disclosure if the `Secure` cookie has not been set - the web browser can be deceived to disclose the session ID over an unencrypted HTTP connection. The attacker can intercept and manipulate the victim user traffic and inject an HTTP unencrypted reference to the web application that will force the web browser to submit the session ID in the clear.
 
-Web アプリケーションの通信に HTTPS のみを使用するように強制しても(Web アプリケーションのホストで TCP/80 ポート、 HTTP が閉じられていても)、`Secure`Cookie が設定されていない場合は Session ID の漏洩から保護されません - Web ブラウザは暗号化されていない HTTP 接続を介して Session ID を開示するように騙すことができます。攻撃者は、被害者のユーザートラフィックを傍受して操作し、ウェブブラウザに Session ID を平文で送信させる HTTP 非暗号化参照をウェブアプリケーションに注入することができます。
+Web アプリケーションの通信に HTTPS のみを使用するように強制しても(Web アプリケーションのホストで TCP/80 ポート、 HTTP が閉じられていても)、`Secure` Cookie が設定されていない場合は Session ID の漏洩から保護されません - Web ブラウザは暗号化されていない HTTP 接続を介して Session ID を開示するように騙すことができます。攻撃者は、被害者のユーザートラフィックを傍受して操作し、ウェブブラウザに Session ID を平文で送信させる HTTP 非暗号化参照をウェブアプリケーションに注入することができます。
 
 See also: [SecureFlag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Secure_and_HttpOnly_cookies)
 
@@ -234,11 +254,9 @@ See also: [SecureFlag](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
 
 The `HttpOnly` cookie attribute instructs web browsers not to allow scripts (e.g. JavaScript or VBscript) an ability to access the cookies via the DOM document.cookie object. This session ID protection is mandatory to prevent session ID stealing through XSS attacks. However, if an XSS attack is combined with a CSRF attack, the requests sent to the web application will include the session cookie, as the browser always includes the cookies when sending requests. The `HttpOnly` cookie only protects the confidentiality of the cookie; the attacker cannot use it offline, outside of the context of an XSS attack.
 
-HttpOnly`Cookie 属性は、 DOM の document.cookie オブジェクトを介してスクリプト(JavaScript や VBscript など)が Cookie にアクセスする能力をウェブブラウザに許可しないよう指示します。この Session ID 保護は、 XSS 攻撃による Session ID の盗用を防ぐために必須です。しかし、 XSS 攻撃と CSRF 攻撃が組み合わさった場合、ブラウザはリクエストを送信する際に必ず Cookie を含めるため、ウェブアプリケーションに送信されるリクエストは Session Cookie を含むことになります。 HttpOnly`Cookie は Cookie の機密性を保護するだけで、攻撃者は XSS 攻撃の文脈以外ではオフラインで Cookie を使用することはできない。
+`HttpOnly` Cookie 属性は、 DOM の document.cookie オブジェクトを介してスクリプト(JavaScript や VBscript など)が Cookie にアクセスする能力をウェブブラウザに許可しないよう指示します。この Session ID 保護は、 XSS 攻撃による Session ID の盗用を防ぐために必須です。しかし、 XSS 攻撃と CSRF 攻撃が組み合わさった場合、ブラウザはリクエストを送信する際に必ず Cookie を含めるため、ウェブアプリケーションに送信されるリクエストは Session Cookie を含むことになります。 `HttpOnly` Cookie は Cookie の機密性を保護するだけで、攻撃者は XSS 攻撃の文脈以外ではオフラインで Cookie を使用することはできない。
 
 See the OWASP [XSS (Cross Site Scripting) Prevention Cheat Sheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
-
-OWASP [XSS (Cross Site Scripting) Prevention Cheat Sheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md) をご参照ください。
 
 See also: [HttpOnly](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Secure_and_HttpOnly_cookies)
 
@@ -260,19 +278,19 @@ The [`Domain` cookie attribute](https://developer.mozilla.org/en-US/docs/Web/HTT
 
 It is recommended to use a narrow or restricted scope for these two attributes. In this way, the `Domain` attribute should not be set (restricting the cookie just to the origin server) and the `Path` attribute should be set as restrictive as possible to the web application path that makes use of the session ID.
 
-これらの 2 つの属性には、狭い範囲または制限された範囲を使用することが推奨されます。この方法では、`Domain`属性は設定すべきではなく(Cookie をオリジン・サーバーだけに制限する)、`Path`属性は Session ID を利用するウェブ・アプリケーション・パスにできるだけ制限的に設定すべきです。
+これらの 2 つの属性には、狭い範囲または制限された範囲を使用することが推奨されます。この方法では、`Domain` 属性は設定すべきではなく(Cookie をオリジン・サーバーだけに制限する)、`Path`属性は Session ID を利用するウェブ・アプリケーション・パスにできるだけ制限的に設定すべきです。
 
 Setting the `Domain` attribute to a too permissive value, such as `example.com` allows an attacker to launch attacks on the session IDs between different hosts and web applications belonging to the same domain, known as cross-subdomain cookies. For example, vulnerabilities in `www.example.com` might allow an attacker to get access to the session IDs from `secure.example.com`.
 
-`Domain` 属性に `example.com` のような寛容すぎる値を設定すると、攻撃者はクロスサブドメイン Cookie として知られる、同じドメインに属する異なるホストとウェブアプリケーション間の Session ID に対する攻撃を開始することができます。例えば、`www.example.com`の脆弱性により、攻撃者は`secure.example.com`の Session ID にアクセスすることができるかもしれません。
+`Domain` 属性に `example.com` のような Permissive (寛容)すぎる値を設定すると、攻撃者はクロスサブドメイン Cookie として知られる、同じドメインに属する異なるホストとウェブアプリケーション間の Session ID に対する攻撃を開始することができます。例えば、`www.example.com`の脆弱性により、攻撃者は`secure.example.com`の Session ID にアクセスすることができるかもしれません。
 
 Additionally, it is recommended not to mix web applications of different security levels on the same domain. Vulnerabilities in one of the web applications would allow an attacker to set the session ID for a different web application on the same domain by using a permissive `Domain` attribute (such as `example.com`) which is a technique that can be used in [session fixation attacks](http://www.acrossecurity.com/papers/session_fixation.pdf).
 
-さらに、同じドメイン上に異なるセキュリティレベルのウェブアプリケーションを混在させないことが推奨されます。 Web アプリケーションの 1 つに脆弱性があると、攻撃者は、[Session 固定化攻撃](http://www.acrossecurity.com/papers/session_fixation.pdf)で使用できるテクニックである寛容な`Domain`属性(`example.com`など)を使用して、同じドメイン上の別の Web アプリケーションの Session ID を設定することができます。
+さらに、同じドメイン上に異なるセキュリティレベルのウェブアプリケーションを混在させないことが推奨されます。 Web アプリケーションの 1 つに脆弱性があると、攻撃者は、[Session 固定化攻撃](http://www.acrossecurity.com/papers/session_fixation.pdf)で使用できるテクニックである Permissive (寛容)な`Domain`属性(`example.com`など)を使用して、同じドメイン上の別の Web アプリケーションの Session ID を設定することができます。
 
 Although the `Path` attribute allows the isolation of session IDs between different web applications using different paths on the same host, it is highly recommended not to run different web applications (especially from different security levels or scopes) on the same host. Other methods can be used by these applications to access the session IDs, such as the `document.cookie` object. Also, any web application can set cookies for any path on that host.
 
-`Path`属性は、同じホスト上で異なるパスを使用する異なるウェブアプリケーション間で Session ID を分離することを可能にしますが、同じホスト上で異なるウェブアプリケーション(特に異なるセキュリティレベルまたはスコープ)を実行しないことが強く推奨されます。これらのアプリケーションが Session ID にアクセスするには、`document.cookie`オブジェクトのような他の方法を使用することができます。また、どのウェブアプリケーションも、そのホスト上のどのパスに対しても Cookie を設定することができます。
+`Path` 属性は、同じホスト上で異なるパスを使用する異なるウェブアプリケーション間で Session ID を分離することを可能にしますが、同じホスト上で異なるウェブアプリケーション(特に異なるセキュリティレベルまたはスコープ)を実行しないことが強く推奨されます。これらのアプリケーションが Session ID にアクセスするには、`document.cookie`オブジェクトのような他の方法を使用することができます。また、どのウェブアプリケーションも、そのホスト上のどのパスに対しても Cookie を設定することができます。
 
 Cookies are vulnerable to DNS spoofing/hijacking/poisoning attacks, where an attacker can manipulate the DNS resolution to force the web browser to disclose the session ID for a given host or domain.
 
@@ -305,6 +323,11 @@ Typically, session management capabilities to track users after authentication m
 
 
 ## HTML5 Web Storage API
+
+> localStorage はタブを跨ぎ、閉じても永続
+> sessionStorage はタブを跨がず、閉じたら消える
+> Web Worker
+> (あまり関係ない)
 
 The Web Hypertext Application Technology Working Group (WHATWG) describes the HTML5 Web Storage APIs, `localStorage` and `sessionStorage`, as mechanisms for storing name-value pairs client-side.
 
@@ -419,19 +442,27 @@ HttpOnly Cookie と比較した Web Worker 実装の利点は、 Web Worker が�
 
 ## Session ID Life Cycle
 
+> ユーザが送ってきた ID を採用せず、サーバが必ず生成する
+> (PHP はユーザの送ってきたものを受け入れた)
+> 送られてきた ID を徹底検証して使う
+> 知らない ID が送られてきたら再生成しつつ、アラート
+> 特権レベルが変わったら(認証)再生成
+> 認証前後で ID 名を変える
+
+
 ### Session ID Generation and Verification: Permissive and Strict Session Management
 
 There are two types of session management mechanisms for web applications, permissive and strict, related to session fixation vulnerabilities. The permissive mechanism allows the web application to initially accept any session ID value set by the user as valid, creating a new session for it, while the strict mechanism enforces that the web application will only accept session ID values that have been previously generated by the web application.
 
-Session 固定化脆弱性に関連する Web アプリケーションの Session 管理機構には、寛容な機構と厳格な機構の 2 種類がある。寛容なメカニズムでは、 Web アプリケーションは、ユーザーが設定した Session ID 値を有効なものとして最初に受け入れ、そのために新しい Session を作成することができ、厳格なメカニズムでは、 Web アプリケーションが以前に生成した Session ID 値のみを受け入れることが強制されます。
+Session 固定化脆弱性に関連する Web アプリケーションの Session 管理機構には、Permissive (寛容)な機構と Strict (厳格)な機構の 2 種類がある。Permissive (寛容)なメカニズムでは、 Web アプリケーションは、ユーザーが設定した Session ID 値を有効なものとして最初に受け入れ、そのために新しい Session を作成することができ、Strict (厳格)なメカニズムでは、 Web アプリケーションが以前に生成した Session ID 値のみを受け入れることが強制されます。
 
 The session tokens should be handled by the web server if possible or generated via a cryptographically secure random number generator.
 
-Session ・トークンは、可能であればウェブ・サーバーが処理するか、暗号化された安全な乱数生成器を介して生成する必要があります。
+Session トークンは、可能であればウェブ・サーバーが処理するか、暗号化された安全な乱数生成器を介して生成する必要があります。
 
 Although the most common mechanism in use today is the strict one (more secure), [PHP defaults to permissive](https://wiki.php.net/rfc/session-use-strict-mode). Developers must ensure that the web application does not use a permissive mechanism under certain circumstances. Web applications should never accept a session ID they have never generated, and in case of receiving one, they should generate and offer the user a new valid session ID. Additionally, this scenario should be detected as a suspicious activity and an alert should be generated.
 
-今日、最も一般的に使用されている機構は厳格なもの(より安全)ですが、 [PHP のデフォルトは permissive](https://wiki.php.net/rfc/session-use-strict-mode)です。開発者は、特定の状況下でウェブアプリケーションが permissive メカニズムを使用しないようにする必要があります。ウェブアプリケーションは、生成したことのない Session ID を受け入れてはいけません。また、 Session ID を受け取った場合は、新しい有効な Session ID を生成してユーザーに提供しなければなりません。さらに、このシナリオは疑わしい活動として検出され、アラートが生成される必要があります。
+今日、最も一般的に使用されている機構は Strict (厳格)なもの(より安全)ですが、 [PHP のデフォルトは permissive](https://wiki.php.net/rfc/session-use-strict-mode)です。開発者は、特定の状況下でウェブアプリケーションが permissive メカニズムを使用しないようにする必要があります。ウェブアプリケーションは、生成したことのない Session ID を受け入れてはいけません。また、 Session ID を受け取った場合は、新しい有効な Session ID を生成してユーザーに提供しなければなりません。さらに、このシナリオは疑わしい活動として検出され、アラートが生成される必要があります。
 
 
 ### Manage Session ID as Any Other User Input
@@ -468,7 +499,7 @@ If the web application uses cookies as the session ID exchange mechanism, and mu
 
 It is very common for web applications to set a user cookie pre-authentication over HTTP to keep track of unauthenticated (or anonymous) users. Once the user authenticates in the web application, a new post-authentication secure cookie is set over HTTPS, and a binding between both cookies and the user session is established. If the web application does not verify both cookies for authenticated sessions, an attacker can make use of the pre-authentication unprotected cookie to get access to the authenticated user session (see [here](https://media.blackhat.com/bh-eu-11/Raul_Siles/BlackHat_EU_2011_Siles_SAP_Session-Slides.pdf) and [here](https://media.blackhat.com/bh-eu-11/Raul_Siles/BlackHat_EU_2011_Siles_SAP_Session-WP.pdf)).
 
-ウェブアプリケーションでは、認証されていない(あるいは匿名の)ユーザーを追跡するために、 HTTP 経由で事前 認証のユーザー Cookie を設定することが非常に一般的です。ユーザがウェブ・アプリケーションで認証されると、新しい認証後の安全な Cookie が HTTPS 経由で設定され、両方の Cookie とユーザ・ Session の間の結合が確立され ます。ウェブ・アプリケーションが認証された Session の両方の Cookie を検証しない場合、攻撃者は認証前の保護されていない Cookie を利用して、認証されたユーザ・ Session にアクセスすることができます([ここ](https://media.blackhat.com/bh-eu-11/Raul_Siles/BlackHat_EU_2011_Siles_SAP_Session-Slides.pdf)と [ここ](https://media.blackhat.com/bh-eu-11/Raul_Siles/BlackHat_EU_2011_Siles_SAP_Session-WP.pdf)を参照)。
+ウェブアプリケーションでは、認証されていない(あるいは匿名の)ユーザーを追跡するために、 HTTP 経由で事前 認証のユーザー Cookie を設定することが非常に一般的です。ユーザがウェブ・アプリケーションで認証されると、新しい認証後の安全な Cookie が HTTPS 経由で設定され、両方の Cookie とユーザ・ Session の間の結合が確立されます。ウェブ・アプリケーションが認証された Session の両方の Cookie を検証しない場合、攻撃者は認証前の保護されていない Cookie を利用して、認証されたユーザ・ Session にアクセスすることができます([ここ](https://media.blackhat.com/bh-eu-11/Raul_Siles/BlackHat_EU_2011_Siles_SAP_Session-Slides.pdf)と [ここ](https://media.blackhat.com/bh-eu-11/Raul_Siles/BlackHat_EU_2011_Siles_SAP_Session-WP.pdf)を参照)。
 
 Web applications should try to avoid the same cookie name for different paths or domain scopes within the same web application, as this increases the complexity of the solution and potentially introduces scoping issues.
 
@@ -477,9 +508,14 @@ Web applications should try to avoid the same cookie name for different paths or
 
 ## Session Expiration
 
+> 頻繁に切れると UX を損ねるが、長いと攻撃リスクが上がる
+> Idle Timeout は数分で、サーバ側で消す
+> Absolute Timeout は数時間
+> 空の値と、過去の Expire で Set-Cookie する
+
 In order to minimize the time period an attacker can launch attacks over active sessions and hijack them, it is mandatory to set expiration timeouts for every session, establishing the amount of time a session will remain active. Insufficient session expiration by the web application increases the exposure of other session-based attacks, as for the attacker to be able to reuse a valid session ID and hijack the associated session, it must still be active.
 
-攻撃者がアクティブな Session に対して攻撃を開始し、 Session を乗っ取ることができる期間を最小化するために、すべての Session に有効期限を設定し、 Session がアクティブであり続ける時間を確立することが必須です。攻撃者が有効な Session ID を再利用して関連する Session を乗っ取るには、その Session がまだ有効でなければならないため、ウェブアプリケーションによる不十分な Session 満了は、他の Session ベースの攻撃の露出を増加させる。
+攻撃者がアクティブな Session に対して攻撃を開始し、 Session を乗っ取ることができる期間を最小化するために、すべての Session に有効期限を設定し、 Session がアクティブであり続ける時間を確立することが必須です。攻撃者が有効な Session ID を再利用して関連する Session を乗っ取るには、その Session がまだ有効でなければならないため、ウェブアプリケーションによる不十分な Session expiration は、他の Session ベースの攻撃の露出を増加させる。
 
 The shorter the session interval is, the lesser the time an attacker has to use the valid session ID. The session expiration timeout values must be set accordingly with the purpose and nature of the web application, and balance security and usability, so that the user can comfortably complete the operations within the web application without his session frequently expiring.
 
@@ -580,6 +616,14 @@ Web アプリケーションで定義されたキャッシュポリシーとは�
 
 ## Additional Client-Side Defenses for Session Management
 
+> Login 前にリロードで Session ID を更新する
+> JS で警告出しつつセッション切れログアウト実装
+> 同一 IP からの複数リクエストには警告/ブロック
+> 異常検知(WAF)も実装(他の SessionID 再利用、セッション中の場所/UA 変更 etc)
+> Session に IP や UA を紐づけておくと Hijack が検出できる、が絶対ではない
+> Session の全ライフサイクルを記録したい、 Session ID 自体は生で書かず Salted-hash とかにする
+> 同時ログインを許すかは大事。アクティブなセッションが見られる UI も。
+
 Web applications can complement the previously described session management defenses with additional countermeasures on the client side. Client-side protections, typically in the form of JavaScript checks and verifications, are not bullet proof and can easily be defeated by a skilled attacker, but can introduce another layer of defense that has to be bypassed by intruders.
 
 ウェブアプリケーションは、クライアント側の追加対策で、先に述べた Session 管理の防御を補完することができます。クライアント側の保護は、典型的には JavaScript のチェックと検証の形で、弾丸のように強いものではなく、熟練した攻撃者に よって簡単に破られる可能性がありますが、侵入者が迂回しなければならない別の防御層を導入することができます。
@@ -642,7 +686,7 @@ Web applications must be able to detect both scenarios based on the number of at
 
 Web applications should focus on detecting anomalies associated to the session ID, such as its manipulation. The OWASP [AppSensor Project](https://owasp.org/www-project-appsensor/) provides a framework and methodology to implement built-in intrusion detection capabilities within web applications focused on the detection of anomalies and unexpected behaviors, in the form of detection points and response actions. Instead of using external protection layers, sometimes the business logic details and advanced intelligence are only available from inside the web application, where it is possible to establish multiple session related detection points, such as when an existing cookie is modified or deleted, a new cookie is added, the session ID from another user is reused, or when the user location or User-Agent changes in the middle of a session.
 
-ウェブアプリケーションは、 Session ID の操作のような Session ID に関連する異常の検出に焦点を当てるべきです。 OWASP [AppSensor Project](https://owasp.org/www-project-appsensor/) は、ウェブアプリケーションに組み込みの侵入検知機能を実装するためのフレーム ワークと方法論を提供し、検知ポイントと応答アクションの形で、異常と予期せぬ行動の検知に焦点をあてています。外部の保護層を使用する代わりに、時にはビジネスロジックの詳細や高度なインテリジェンスがウェブアプリケーションの内部からしか利用できない場合があります。そこで、既存の Cookie が変更または削除されたとき、新しい Cookie が追加されたとき、他のユーザーの Session ID が再利用されたとき、 Session の途中でユーザーの場所やユーザーエージェントが変わったときなど、複数の Session 関連の検出ポイントを確立することが可能です。
+ウェブアプリケーションは、 Session ID の操作のような Session ID に関連する異常の検出に焦点を当てるべきです。 OWASP [AppSensor Project](https://owasp.org/www-project-appsensor/) は、ウェブアプリケーションに組み込みの侵入検知機能を実装するためのフレームワークと方法論を提供し、検知ポイントと応答アクションの形で、異常と予期せぬ行動の検知に焦点をあてています。外部の保護層を使用する代わりに、時にはビジネスロジックの詳細や高度なインテリジェンスがウェブアプリケーションの内部からしか利用できない場合があります。そこで、既存の Cookie が変更または削除されたとき、新しい Cookie が追加されたとき、他のユーザーの Session ID が再利用されたとき、 Session の途中でユーザーの場所やユーザーエージェントが変わったときなど、複数の Session 関連の検出ポイントを確立することが可能です。
 
 
 ### Binding the Session ID to Other User Properties
@@ -691,6 +735,8 @@ Web アプリケーションでは、アクティブな Session の詳細をい�
 
 
 ## Session Management WAF Protections
+
+> 自分で実装できないなら WAF を入れよう
 
 There are situations where the web application source code is not available or cannot be modified, or when the changes required to implement the multiple security recommendations and best practices detailed above imply a full redesign of the web application architecture, and therefore, cannot be easily implemented in the short term.
 
